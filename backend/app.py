@@ -16,7 +16,7 @@ def predict():
     processed_text = preprocess_negations(text)
     predictions = predict_with_confidence(processed_text)
 
-    # Apply filters and adjust confidence based on clarifications
+    # Adjust predictions with clarification answers
     if answers:
         adjusted_predictions = []
         for disease, conf in predictions:
@@ -27,19 +27,16 @@ def predict():
             for q in questions:
                 ans = answers.get(q)
                 if ans == "no":
-                    penalty += 0.3  # Penalize disease for "no" answer
+                    penalty += 0.3
                 elif ans == "yes":
-                    bonus += 0.2    # Reward for "yes" answer
-
+                    bonus += 0.2
             new_conf = conf + bonus - penalty
             if new_conf > 0:
                 adjusted_predictions.append((disease, new_conf))
-
         if adjusted_predictions:
-            # Sort after adjusting
             predictions = sorted(adjusted_predictions, key=lambda x: -x[1])
 
-    # Trigger clarification if needed
+    # Trigger clarification if confidence is low
     if len(predictions) > 1 and predictions[0][1] - predictions[1][1] < 0.2:
         top_diseases = [predictions[0][0], predictions[1][0]]
         followup = get_clarifying_questions(top_diseases)
@@ -55,6 +52,9 @@ def predict():
         "confidence": round(predictions[0][1], 3)
     })
 
+@app.route('/reset-session', methods=['POST'])
+def reset_session():
+    return jsonify({"status": "reset successful"})
 
 @app.route('/predefined-symptoms', methods=['GET'])
 def predefined_symptoms():
